@@ -166,7 +166,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 market_data = {}
 
 # WebSocket connections
-connections = set()
+connections = []
 
 @app.get("/", response_class=HTMLResponse)
 async def get():
@@ -176,7 +176,7 @@ async def get():
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    connections.add(websocket)
+    connections.append(websocket)
     try:
         while True:
             await websocket.receive_text()
@@ -193,12 +193,14 @@ async def update_market_data(data: dict):
 async def broadcast_market_data():
     if connections:
         message = {"type": "market_data", "data": market_data}
-        await asyncio.gather(
-            *[connection.send_json(message) for connection in connections]
-        )
+        for connection in connections:
+            try:
+                await connection.send_json(message)
+            except Exception as e:
+                print(f"Error sending message to WebSocket: {e}")
 
 def run_fastapi():
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=8000)
 
 
 def run_market_maker(application):

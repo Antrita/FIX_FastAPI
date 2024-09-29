@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Market Data</title>
+    <link rel="stylesheet" href="/static/MarketData.css">
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const socket = new WebSocket('ws://localhost:8000/ws');
+            const bidButtons = document.querySelectorAll('.bid-button');
+            const orderDetails = document.getElementById('order-details');
+
+            socket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                if (data.type === 'market_data') {
+                    updateBidButtons(data.data);
+                }
+            };
+
+            function updateBidButtons(data) {
+                const bids = Object.entries(data).map(([symbol, item]) => ({symbol, bid: item.bid}))
+                    .sort((a, b) => b.bid - a.bid)
+                    .slice(0, 6);
+
+                bidButtons.forEach((button, index) => {
+                    if (index < bids.length) {
+                        const {symbol, bid} = bids[index];
+                        button.textContent = `Bid ${bid.toFixed(2)}`;
+                        button.dataset.symbol = symbol;
+                        button.dataset.bid = bid;
+                        button.disabled = false;
+                    } else {
+                        button.textContent = 'No Bid';
+                        button.disabled = true;
+                        delete button.dataset.symbol;
+                        delete button.dataset.bid;
+                    }
+                });
+            }
+
+            bidButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    if (!button.disabled) {
+                        const symbol = button.dataset.symbol;
+                        const bidValue = parseFloat(button.dataset.bid);
+                        displayOrderDetails(symbol, bidValue);
+                    }
+                });
+            });
+
+            function displayOrderDetails(symbol, bidValue) {
+                orderDetails.innerHTML = `
+                    <h3>Order Details</h3>
+                    <p>Symbol: ${symbol}</p>
+                    <p>Bid Price: ${bidValue.toFixed(2)}</p>
+                `;
+            }
+
+            // Initial fetch of market data
+            fetch('/update_market_data')
+                .then(response => response.json())
+                .then(data => {
+                    updateBidButtons(data);
+                })
+                .catch(error => console.error('Error fetching initial market data:', error));
+        });
+    </script>
+</head>
+<body>
+    <h1>Market Data</h1>
+    <div id="bid-buttons">
+        <button class="bid-button">No Bid</button>
+        <button class="bid-button">No Bid</button>
+        <button class="bid-button">No Bid</button>
+        <button class="bid-button">No Bid</button>
+        <button class="bid-button">No Bid</button>
+        <button class="bid-button">No Bid</button>
+    </div>
+    <div id="order-details"></div>
+</body>
+</html>

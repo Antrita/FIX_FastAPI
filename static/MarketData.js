@@ -1,39 +1,40 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const socket = new WebSocket('ws://127.0.0.1:8000/ws');
+    const socket = new WebSocket(`ws://${window.location.host}/ws`);
     const bidButtons = document.querySelectorAll('.bid-button');
     const orderDetails = document.getElementById('order-details');
+
+    let bids = {};
 
     socket.onmessage = (event) => {
         const data = JSON.parse(event.data);
         if (data.type === 'market_data') {
-            updateBidButtons(data.data);
+            updateBid(data.data);
         }
     };
 
-    function updateBidButtons(data) {
-        const bids = Object.entries(data).flatMap(([symbol, item]) => [
-            { symbol, bid: item.bid, trader: 'Trader 1' },
-            { symbol, bid: item.bid * 0.999, trader: 'Trader 2' },
-            { symbol, bid: item.bid * 0.998, trader: 'Trader 3' },
-            { symbol, bid: item.bid * 0.997, trader: 'Trader 4' },
-            { symbol, bid: item.bid * 0.996, trader: 'Trader 5' },
-            { symbol, bid: item.bid * 0.995, trader: 'Trader 6' }
-        ]).sort((a, b) => b.bid - a.bid).slice(0, 6);
+    function updateBid(data) {
+        const { symbol, bid, trader } = data;
+        bids[trader] = { symbol, bid, timestamp: Date.now() };
+        updateBidButtons();
+    }
 
-        bidButtons.forEach((button, index) => {
-            if (index < bids.length) {
-                const { symbol, bid, trader } = bids[index];
-                button.textContent = `${trader}: Bid ${bid.toFixed(2)}`;
-                button.dataset.symbol = symbol;
-                button.dataset.bid = bid;
-                button.dataset.trader = trader;
+    function updateBidButtons() {
+        const currentTime = Date.now();
+        bidButtons.forEach((button) => {
+            const trader = button.dataset.trader;
+            const bidData = bids[trader];
+            if (bidData && currentTime - bidData.timestamp < 12000) {
+                button.textContent = `Bid ${bidData.bid.toFixed(2)}`;
+                button.dataset.symbol = bidData.symbol;
+                button.dataset.bid = bidData.bid;
+                button.classList.remove('no-bid');
                 button.disabled = false;
             } else {
                 button.textContent = 'No Bid';
+                button.classList.add('no-bid');
                 button.disabled = true;
                 delete button.dataset.symbol;
                 delete button.dataset.bid;
-                delete button.dataset.trader;
             }
         });
     }
@@ -58,11 +59,6 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
-    // Initial fetch of market data
-    fetch('/update_market_data')
-        .then(response => response.json())
-        .then(data => {
-            updateBidButtons(data);
-        })
-        .catch(error => console.error('Error fetching initial market data:', error));
+    // Update bid buttons every second to check for timeouts
+    setInterval(updateBidButtons, 1000);
 });

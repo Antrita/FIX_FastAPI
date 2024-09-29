@@ -215,21 +215,39 @@ def run_market_maker(application):
             time.sleep(1)
     except (fix.ConfigError, fix.RuntimeError) as e:
         print(f"Error in market maker thread: {e}")
-
-
+#New function to stream Bids to the MarketData in  a separate thread.
+def stream_bids(self):
+        while True:
+            for symbol in self.symbols:
+                for trader in range(1, 7):  # 6 traders
+                    bid = round(self.prices[symbol] + random.uniform(-0.5, 0.5), 2)
+                    data = {
+                        "symbol": symbol,
+                        "bid": bid,
+                        "trader": f"Trader {trader}"
+                    }
+                    try:
+                        requests.post(self.fastapi_url, json=data)
+                    except requests.exceptions.RequestException as e:
+                        print(f"Error streaming bid to FastAPI: {e}")
+                time.sleep(2)  # Stream a new bid every 2 seconds
 def main():
     try:
         application = MarketMaker()
 
-        #FastAPI  thread
+        # FastAPI thread
         fastapi_thread = threading.Thread(target=run_fastapi, daemon=True)
         fastapi_thread.start()
 
-        #MarketMaker thread
+        # MarketMaker thread
         market_maker_thread = threading.Thread(target=run_market_maker, args=(application,), daemon=True)
         market_maker_thread.start()
 
-        print("Market Maker and FastAPI server started.")
+        # Bid streaming thread
+        bid_streaming_thread = threading.Thread(target=application.stream_bids, daemon=True)
+        bid_streaming_thread.start()
+
+        print("Market Maker, FastAPI server, and Bid Streaming started.")
 
         # Keep the main thread running
         while True:
@@ -237,7 +255,3 @@ def main():
     except Exception as e:
         print(f"Error in main thread: {e}")
         sys.exit()
-
-
-if __name__ == "__main__":
-    main()

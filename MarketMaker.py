@@ -10,6 +10,10 @@ from fastapi import FastAPI, WebSocket
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 import uvicorn
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def gen_order_id():
     return str(random.randint(100000, 999999))
@@ -216,21 +220,26 @@ def run_market_maker(application):
     except (fix.ConfigError, fix.RuntimeError) as e:
         print(f"Error in market maker thread: {e}")
 #New function to stream Bids to the MarketData in  a separate thread.
-def stream_bids(self):
+    def stream_bids(self):
         while True:
             for symbol in self.symbols:
                 for trader in range(1, 7):  # 6 traders
-                    bid = round(self.prices[symbol] + random.uniform(-0.5, 0.5), 2)
-                    data = {
-                        "symbol": symbol,
-                        "bid": bid,
-                        "trader": f"Trader {trader}"
-                    }
-                    try:
-                        requests.post(self.fastapi_url, json=data)
-                    except requests.exceptions.RequestException as e:
-                        print(f"Error streaming bid to FastAPI: {e}")
-                time.sleep(2)  # Stream a new bid every 2 seconds
+                    if random.random() < 0.8:  # 80% chance to send a bid
+                        bid = round(self.prices[symbol] + random.uniform(-0.5, 0.5), 2)
+                        data = {
+                            "symbol": symbol,
+                            "bid": bid,
+                            "trader": f"Trader {trader}"
+                        }
+                        logger.info(f"Preparing to send bid: {data}")
+                        try:
+                            response = requests.post(self.fastapi_url, json=data)
+                            logger.info(f"Bid sent. Response status: {response.status_code}")
+                            if response.status_code != 200:
+                                logger.error(f"Failed to send bid. Response: {response.text}")
+                        except requests.exceptions.RequestException as e:
+                            logger.error(f"Error sending bid to FastAPI: {e}")
+            time.sleep(1)  # Stream new bids every second
 def main():
     try:
         application = MarketMaker()
@@ -254,4 +263,3 @@ def main():
             time.sleep(1)
     except Exception as e:
         print(f"Error in main thread: {e}")
-        sys.exit()

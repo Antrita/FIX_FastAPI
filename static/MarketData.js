@@ -15,29 +15,35 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     function updateBidTable(data) {
+        console.log("Updating bid table with data:", data);
         for (const [symbol, bidData] of Object.entries(data)) {
-            const { bid, trader } = bidData;
-            const time = new Date().toLocaleTimeString();
+            if (bidData && typeof bidData.bid === 'number') {
+                const { bid, trader } = bidData;
+                const time = new Date().toLocaleTimeString();
 
-            const newRow = document.createElement('tr');
-            newRow.innerHTML = `
-                <td>${time}</td>
-                <td>${symbol}</td>
-                <td>${bid.toFixed(2)}</td>
-            `;
-            newRow.classList.add('new-bid');
+                const newRow = document.createElement('tr');
+                newRow.innerHTML = `
+                    <td>${time}</td>
+                    <td>${symbol}</td>
+                    <td>${bid.toFixed(2)}</td>
+                    <td>${trader}</td>
+                `;
+                newRow.classList.add('new-bid');
 
-            bidBody.insertBefore(newRow, bidBody.firstChild);
+                bidBody.insertBefore(newRow, bidBody.firstChild);
 
-            // Remove excess rows
-            while (bidBody.children.length > maxBids) {
-                bidBody.removeChild(bidBody.lastChild);
+                // Remove excess rows
+                while (bidBody.children.length > maxBids) {
+                    bidBody.removeChild(bidBody.lastChild);
+                }
+
+                // Set timeout for row expiration
+                setTimeout(() => {
+                    newRow.classList.add('expired');
+                }, 100000);
+            } else {
+                console.error("Invalid bid data received:", bidData);
             }
-
-            // Set timeout for row expiration
-            setTimeout(() => {
-                newRow.classList.add('expired');
-            }, 10000);
         }
     }
 

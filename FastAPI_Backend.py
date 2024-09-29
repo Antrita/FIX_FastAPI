@@ -41,26 +41,20 @@ async def websocket_endpoint(websocket: WebSocket):
 @app.post("/update_market_data")
 @app.get("/update_market_data")
 async def update_market_data(data: dict = None):
-    logger.info(f"Received market data update: {data}")
     if data:
-        trader = data["trader"]
-        market_data[trader] = {"symbol": data["symbol"], "bid": data["bid"]}
         await broadcast_market_data(data)
         return {"status": "success"}
-    return market_data
+    return {"status": "error", "message": "No data provided"}
 
 async def broadcast_market_data(data):
     if connections:
-        message = json.dumps({"type": "market_data", "data": data})
-        logger.info(f"Broadcasting to {len(connections)} connections: {message}")
+        message = {"type": "market_data", "data": data}
         for connection in connections:
             try:
-                await connection.send_text(message)
+                await connection.send_json(message)
             except Exception as e:
                 logger.error(f"Error sending message to WebSocket: {e}")
                 connections.remove(connection)
-    else:
-        logger.warning("No WebSocket connections to broadcast to")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000, log_level="info")

@@ -4,37 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Market Data</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&family=Roboto+Mono&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/MarketData.css">
     <script src="/static/MarketData.js"></script>
 </head>
 <body>
     <h1>Market Data</h1>
-    <div id="bid-buttons">
-        <div class="trader-container">
-            <span class="trader-name">Trader 1</span>
-            <button class="bid-button no-bid" data-trader="Trader 1">No Bid</button>
-        </div>
-        <div class="trader-container">
-            <span class="trader-name">Trader 2</span>
-            <button class="bid-button no-bid" data-trader="Trader 2">No Bid</button>
-        </div>
-        <div class="trader-container">
-            <span class="trader-name">Trader 3</span>
-            <button class="bid-button no-bid" data-trader="Trader 3">No Bid</button>
-        </div>
-        <div class="trader-container">
-            <span class="trader-name">Trader 4</span>
-            <button class="bid-button no-bid" data-trader="Trader 4">No Bid</button>
-        </div>
-        <div class="trader-container">
-            <span class="trader-name">Trader 5</span>
-            <button class="bid-button no-bid" data-trader="Trader 5">No Bid</button>
-        </div>
-        <div class="trader-container">
-            <span class="trader-name">Trader 6</span>
-            <button class="bid-button no-bid" data-trader="Trader 6">No Bid</button>
-        </div>
+    <div class="container">
+        <table id="bid-table">
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Symbol</th>
+                    <th>Bid</th>
+                </tr>
+            </thead>
+            <tbody id="bid-body">
+                <!-- Bids will be inserted here dynamically -->
+            </tbody>
+        </table>
     </div>
-    <div id="order-details"></div>
 </body>
 </html>

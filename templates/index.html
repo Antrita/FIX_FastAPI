@@ -3,10 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FIX Client</title>
+    <title>Trading Platform</title>
     <link rel="stylesheet" href="/static/style.css">
+    <script src="/static/script.js"></script>
 </head>
 <body>
+    <h1>Trading Platform</h1>
+
     <div id="connection-status" class="disconnected">
         Connection Status: Not Connected
     </div>
@@ -14,50 +17,40 @@
     <div id="order-controls">
         <h2>Order Entry</h2>
         <form id="order-form">
-            <label>
-                Action:
-                <select name="action">
-                    <option value="buy">Buy</option>
-                    <option value="sell">Sell</option>
-                </select>
-            </label>
-            <label>
-                Symbol:
-                <input type="text" name="symbol" required>
-            </label>
-            <label>
-                Quantity:
-                <input type="number" name="quantity" required>
-            </label>
-            <label>
-                Price:
-                <input type="number" name="price" step="0.01" required>
-            </label>
+            <label for="action">Action:</label>
+            <select name="action" id="action">
+                <option value="Buy">Buy</option>
+                <option value="Sell">Sell</option>
+            </select>
+
+            <label for="symbol">Symbol:</label>
+            <input type="text" name="symbol" id="symbol" required>
+
+            <label for="quantity">Quantity:</label>
+            <input type="number" name="quantity" id="quantity" required>
+
+            <label for="price-input">Price:</label>
+            <input type="number" name="price" id="price-input" required>
+
             <button type="submit">Place Order</button>
         </form>
-        <div id="order-message" class="hidden">Order placed successfully!</div>
+        <div id="order-message" class="hidden"></div>
     </div>
 
     <div id="market-data">
         <h2>Market Data</h2>
-        <div>
-            <button id="subscribe-btn">Subscribe</button>
-            <button id="unsubscribe-btn">Unsubscribe</button>
-        </div>
-        <div id="market-data-content">No market data subscribed yet.</div>
+        <button id="subscribe-btn">Subscribe</button>
+        <button id="unsubscribe-btn">Unsubscribe</button>
     </div>
 
     <div id="order-status">
         <h2>Order Status</h2>
         <form id="status-form">
-            <label>
-                ClOrdID:
-                <input type="text" name="clordid" required>
-            </label>
+            <label for="clordid">ClOrdID:</label>
+            <input type="text" name="clordid" id="clordid" required>
             <button type="submit">Check Status</button>
         </form>
+        <div id="status-response" class="hidden"></div>
     </div>
-
-    <script src="/static/script.js"></script>
 </body>
 </html>

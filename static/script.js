@@ -10,70 +10,92 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let isSubscribed = false;
 
-    socket.onopen = () => {
-        connectionStatus.textContent = 'Connection Status: Connected';
-        connectionStatus.className = 'connected';
-    };
-
-    socket.onclose = () => {
-        connectionStatus.textContent = 'Connection Status: Disconnected';
-        connectionStatus.className = 'disconnected';
-    };
-
-    subscribeBtn.addEventListener('click', () => {
-        isSubscribed = true;
-        priceInput.disabled = false;
-        priceInput.placeholder = '';
-        window.location.href = 'MarketData.html';
-    });
-
-    unsubscribeBtn.addEventListener('click', () => {
-        isSubscribed = false;
-        priceInput.disabled = true;
-        priceInput.value = '';
-        priceInput.placeholder = 'Please subscribe to Market Data first!';
-    });
-
-    priceInput.addEventListener('focus', () => {
-        if (!isSubscribed) {
-            priceInput.blur();
-            priceInput.value = '';
-            priceInput.placeholder = 'Please subscribe to Market Data first!';
-        }
-    });
-
-    orderForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        if (!isSubscribed) {
-            alert('Please subscribe to Market Data before placing an order.');
-            return;
-        }
-        const formData = new FormData(orderForm);
-        const order = {
-            action: formData.get('action'),
-            symbol: formData.get('symbol'),
-            quantity: formData.get('quantity'),
-            price: formData.get('price')
+    if (socket) {
+        socket.onopen = () => {
+            if (connectionStatus) {
+                connectionStatus.textContent = 'Connection Status: Connected';
+                connectionStatus.className = 'connected';
+            }
         };
 
-        console.log('Order placed:', order);
+        socket.onclose = () => {
+            if (connectionStatus) {
+                connectionStatus.textContent = 'Connection Status: Disconnected';
+                connectionStatus.className = 'disconnected';
+            }
+        };
+    }
 
-        orderMessage.textContent = 'Order placed successfully!';
-        orderMessage.className = '';
-        setTimeout(() => {
-            orderMessage.className = 'hidden';
-        }, 3000);
-    });
+    if (subscribeBtn) {
+        subscribeBtn.addEventListener('click', () => {
+            isSubscribed = true;
+            if (priceInput) {
+                priceInput.disabled = false;
+                priceInput.placeholder = '';
+            }
+            window.location.href = 'Market Data.html';
+        });
+    }
 
-    statusForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const formData = new FormData(statusForm);
-        const clOrdID = formData.get('clordid');
+    if (unsubscribeBtn) {
+        unsubscribeBtn.addEventListener('click', () => {
+            isSubscribed = false;
+            if (priceInput) {
+                priceInput.disabled = true;
+                priceInput.value = '';
+                priceInput.placeholder = 'Please subscribe to Market Data first!';
+            }
+        });
+    }
 
-        // check the order status with backend
-        console.log('Checking status for order:', clOrdID);
-    });
-      // Initialize price input state
-    priceInput.disabled = true;
-    priceInput.placeholder = 'Please subscribe to Market Data first!';
+    if (priceInput) {
+        priceInput.addEventListener('focus', () => {
+            if (!isSubscribed) {
+                priceInput.blur();
+                priceInput.value = '';
+                priceInput.placeholder = 'Please subscribe to Market Data first!';
+            }
+        });
+
+        // Initialize price input state
+        priceInput.disabled = true;
+        priceInput.placeholder = 'Please subscribe to Market Data first!';
+    }
+
+    if (orderForm) {
+        orderForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (!isSubscribed) {
+                alert('Please subscribe to Market Data before placing an order.');
+                return;
+            }
+            const formData = new FormData(orderForm);
+            const order = {
+                action: formData.get('action'),
+                symbol: formData.get('symbol'),
+                quantity: formData.get('quantity'),
+                price: formData.get('price')
+            };
+
+            console.log('Order placed:', order);
+
+            if (orderMessage) {
+                orderMessage.textContent = 'Order placed successfully!';
+                orderMessage.className = '';
+                setTimeout(() => {
+                    orderMessage.className = 'hidden';
+                }, 3000);
+            }
+        });
+    }
+
+    if (statusForm) {
+        statusForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const formData = new FormData(statusForm);
+            const clOrdID = formData.get('clordid');
+
+            console.log('Checking status for order:', clOrdID);
+        });
+    }
 });

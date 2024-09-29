@@ -136,6 +136,7 @@ class MarketMaker(fix.Application):
 
             time.sleep(1)
 
+    #SEND MARKET DATA TO FASTAPI
     def send_update_to_fastapi(self, symbol):
         data = {
             "symbol": symbol,
@@ -183,12 +184,16 @@ async def websocket_endpoint(websocket: WebSocket):
     finally:
         connections.remove(websocket)
 
+#Modified to stream bids into  MarketData card
 @app.post("/update_market_data")
-async def update_market_data(data: dict):
-    symbol = data["symbol"]
-    market_data[symbol] = {"bid": data["bid"], "ask": data["ask"]}
-    await broadcast_market_data()
-    return {"status": "success"}
+@app.get("/update_market_data")
+async def update_market_data(data: dict = None):
+    if data:
+        symbol = data["symbol"]
+        market_data[symbol] = {"bid": data["bid"], "ask": data["ask"]}
+        await broadcast_market_data()
+    return market_data
+
 
 async def broadcast_market_data():
     if connections:
@@ -216,11 +221,11 @@ def main():
     try:
         application = MarketMaker()
 
-        # Start FastAPI in a separate thread
+        #FastAPI  thread
         fastapi_thread = threading.Thread(target=run_fastapi, daemon=True)
         fastapi_thread.start()
 
-        # Start MarketMaker in a separate thread
+        #MarketMaker thread
         market_maker_thread = threading.Thread(target=run_market_maker, args=(application,), daemon=True)
         market_maker_thread.start()
 

@@ -148,10 +148,12 @@ class MarketMaker(fix.Application):
                             logger.error(f"Failed to send bid. Response: {response.text}")
                     except requests.exceptions.RequestException as e:
                         logger.error(f"Error sending bid to FastAPI: {e}")
-                time.sleep(4)  # Stream new bids every 4 seconds
+                time.sleep(5)  # Stream new bids every 4 seconds
             except Exception as e:
                 logger.error(f"Error in stream_bids: {e}")
-                time.sleep(5)  # Wait a bit before retrying if there's an error
+                time.sleep(6)
+
+    # Wait a bit before retrying if there's an error
 
     def start(self):
         settings = fix.SessionSettings("Server.cfg")

@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateBidTable(data) {
         console.log("Updating bid table with data:", data);
         for (const [symbol, bidData] of Object.entries(data)) {
-            if (bidData && typeof bidData.bid === 'number') {
+            if (bidData && typeof bidData.bid === 'number' && bidData.trader) {
                 const { bid, trader } = bidData;
                 const time = new Date().toLocaleTimeString();
 
@@ -40,9 +40,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Set timeout for row expiration
                 setTimeout(() => {
                     newRow.classList.add('expired');
-                }, 100000);
+                }, 40000);
             } else {
-                console.error("Invalid bid data received:", bidData);
+                console.error("Invalid bid data received for symbol:", symbol, bidData);
             }
         }
     }

@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 connectionStatus.className = 'disconnected';
             }
         };
-    }
+
         socket.onmessage = (event) => {
             const data = JSON.parse(event.data);
             if (data.type === 'market_data') {
@@ -34,9 +34,10 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-     function updateMarketData(data) {
+    function updateMarketData(data) {
         // Update the UI with the received market data
         console.log('Received market data:', data);
+    }
 
     if (subscribeBtn) {
         subscribeBtn.addEventListener('click', () => {
@@ -55,15 +56,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-     if (priceInput) {
-        // Remove the disabled state and placeholder
+    if (priceInput) {
+        // Remove any event listeners that might be preventing input
         priceInput.disabled = false;
         priceInput.placeholder = 'Enter price';
     }
 
-
-
-     if (orderForm) {
+    if (orderForm) {
         orderForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const formData = new FormData(orderForm);

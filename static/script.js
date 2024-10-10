@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const statusForm = document.getElementById('status-form');
     const priceInput = document.getElementById('price-input');
     let isSubscribed = false;
+    let marketDataWindow = null;
 
     if (socket) {
         socket.onopen = () => {
@@ -38,65 +39,33 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Received market data:', data);
 
     if (subscribeBtn) {
-    subscribeBtn.addEventListener('click', () => {
-        isSubscribed = true;
-        if (priceInput) {
-            priceInput.disabled = false;
-            priceInput.placeholder = '';
-        }
-        fetch('http://127.0.0.1:8000/MarketData.html')
-            .then(response => {
-                if (response.ok) {
-                    return response.text();
-                } else {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-            })
-            .then(html => {
-                document.getElementById('market-data-content').innerHTML = html;
-                // Reinitialize WebSocket connection for MarketData
-                const script = document.createElement('script');
-                script.src = '/static/MarketData.js';
-                document.body.appendChild(script);
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                document.getElementById('market-data-content').innerHTML = 'Error loading Market Data. Please try again later.';
-            });
-    });
-}
+        subscribeBtn.addEventListener('click', () => {
+            isSubscribed = true;
+            marketDataWindow = window.open('http://127.0.0.1:8000/MarketData.html', 'MarketData', 'width=600,height=400');
+        });
+    }
+
     if (unsubscribeBtn) {
         unsubscribeBtn.addEventListener('click', () => {
             isSubscribed = false;
-            if (priceInput) {
-                priceInput.disabled = true;
-                priceInput.value = '';
-                priceInput.placeholder = 'Please subscribe to Market Data first!';
+            if (marketDataWindow) {
+                marketDataWindow.close();
+                marketDataWindow = null;
             }
         });
     }
 
-    if (priceInput) {
-        priceInput.addEventListener('focus', () => {
-            if (!isSubscribed) {
-                priceInput.blur();
-                priceInput.value = '';
-                priceInput.placeholder = 'Please subscribe to Market Data first!';
-            }
-        });
-
-        // Initialize price input state
-        priceInput.disabled = true;
-        priceInput.placeholder = 'Please subscribe to Market Data first!';
+     if (priceInput) {
+        // Remove the disabled state and placeholder
+        priceInput.disabled = false;
+        priceInput.placeholder = 'Enter price';
     }
 
-    if (orderForm) {
+
+
+     if (orderForm) {
         orderForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            if (!isSubscribed) {
-                alert('Please subscribe to Market Data before placing an order.');
-                return;
-            }
             const formData = new FormData(orderForm);
             const order = {
                 action: formData.get('action'),
@@ -105,10 +74,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 price: formData.get('price')
             };
 
-            console.log('Order placed:', order);
+            const clOrdID = generateClOrdID();
+            console.log('Order placed:', order, 'ClOrdID:', clOrdID);
 
             if (orderMessage) {
-                orderMessage.textContent = 'Order placed successfully!';
+                orderMessage.textContent = `Order placed successfully! ClOrdID: ${clOrdID}`;
                 orderMessage.className = '';
                 setTimeout(() => {
                     orderMessage.className = 'hidden';
@@ -125,5 +95,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             console.log('Checking status for order:', clOrdID);
         });
+    }
+
+    function generateClOrdID() {
+        return 'ORD' + Math.random().toString(36).substr(2, 9);
     }
 });

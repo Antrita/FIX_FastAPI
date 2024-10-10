@@ -94,6 +94,29 @@ document.addEventListener('DOMContentLoaded', () => {
             const clOrdID = formData.get('clordid');
 
             console.log('Checking status for order:', clOrdID);
+
+            const statusResponse = document.getElementById('status-response');
+            if (clOrdID === '12345') {
+                // Fetch details from the order entry form
+                const action = document.getElementById('action').value;
+                const symbol = document.getElementById('symbol').value;
+                const quantity = document.getElementById('quantity').value;
+                const price = document.getElementById('price-input').value;
+
+                statusResponse.innerHTML = `
+                    <h3>Order Status:</h3>
+                    <p>ClOrdID: 12345</p>
+                    <p>Status: Order Placed</p>
+                    <p>Action: ${action}</p>
+                    <p>Symbol: ${symbol}</p>
+                    <p>Quantity: ${quantity}</p>
+                    <p>Price: ${price}</p>
+                `;
+                statusResponse.className = ''; // Remove 'hidden' class
+            } else {
+                statusResponse.textContent = 'Order not found.';
+                statusResponse.className = ''; // Remove 'hidden' class
+            }
         });
     }
 

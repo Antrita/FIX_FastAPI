@@ -136,11 +136,35 @@ button:hover:not(:disabled) {
 }
 
 #order-message,
-#market-status,
-#status-response {
+#market-status {
   color: #32CD32;
   margin-top: 10px;
   font-weight: bold;
+}
+
+/* Refinitiv-styled card for status response */
+#status-response {
+  background-color: #ffffff;
+  color: #333333;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 15px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  font-weight: normal;
+  max-width: 400px;
+  width: 100%;
+}
+
+#status-response h3 {
+  color: #0066cc;
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-size: 18px;
+}
+
+#status-response p {
+  margin: 8px 0;
+  font-size: 14px;
 }
 
 /* Additional styles to ensure price input is always enabled */

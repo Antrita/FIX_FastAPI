@@ -6,10 +6,13 @@ import threading
 import time
 import requests
 import asyncio
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
 import uvicorn
+import logging
+from fastapi.middleware.cors import CORSMiddleware
+import json
 
 def gen_order_id():
     return str(random.randint(100000, 999999))
@@ -134,19 +137,21 @@ class MarketMaker(fix.Application):
             for md_req_id in self.subscriptions:
                 self.send_market_data(md_req_id, self.session_id)
 
-            time.sleep(1)
+            time.sleep(5)
 
     def send_update_to_fastapi(self, symbol):
         data = {
             "symbol": symbol,
             "bid": round(self.prices[symbol] - 0.01, 2),
             "ask": round(self.prices[symbol] + 0.01, 2),
-            "trader": "MarketMaker"  # Add this line to include trader information
+            "trader": "MarketMaker"
         }
         try:
             response = requests.post(self.fastapi_url, json=data)
             if response.status_code != 200:
                 print(f"Error sending update to FastAPI: {response.status_code}")
+            else:
+                print(f"Successfully sent update for {symbol}: {json.dumps(data)}")
         except requests.exceptions.RequestException as e:
             print(f"Error sending update to FastAPI: {e}")
 
@@ -157,85 +162,3 @@ class MarketMaker(fix.Application):
         acceptor = fix.SocketAcceptor(self, store_factory, settings, log_factory)
 
         acceptor.start()
-
-        # Start the price updating thread
-        threading.Thread(target=self.update_prices, daemon=True).start()
-
-# FastAPI app
-app = FastAPI()
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
-# Store for market data
-market_data = {}
-
-# WebSocket connections
-connections = []
-
-@app.get("/", response_class=HTMLResponse)
-async def get():
-    with open("templates/index.html") as f:
-        return f.read()
-
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    connections.append(websocket)
-    try:
-        while True:
-            await websocket.receive_text()
-    finally:
-        connections.remove(websocket)
-
-@app.post("/update_market_data")
-async def update_market_data(data: dict):
-    symbol = data["symbol"]
-    market_data[symbol] = {"bid": data["bid"], "ask": data["ask"]}
-    await broadcast_market_data()
-    return {"status": "success"}
-
-async def broadcast_market_data():
-    if connections:
-        message = {"type": "market_data", "data": market_data}
-        for connection in connections:
-            try:
-                await connection.send_json(message)
-            except Exception as e:
-                print(f"Error sending message to WebSocket: {e}")
-
-def run_fastapi():
-    uvicorn.run(app, host="127.0.0.1", port=8000)
-
-
-def run_market_maker(application):
-    try:
-        application.start()
-        while True:
-            time.sleep(1)
-    except (fix.ConfigError, fix.RuntimeError) as e:
-        print(f"Error in market maker thread: {e}")
-
-
-def main():
-    try:
-        application = MarketMaker()
-
-        # Start FastAPI in a separate thread
-        fastapi_thread = threading.Thread(target=run_fastapi, daemon=True)
-        fastapi_thread.start()
-
-        # Start MarketMaker in a separate thread
-        market_maker_thread = threading.Thread(target=run_market_maker, args=(application,), daemon=True)
-        market_maker_thread.start()
-
-        print("Market Maker and FastAPI server started.")
-
-        # Keep the main thread running
-        while True:
-            time.sleep(1)
-    except Exception as e:
-        print(f"Error in main thread: {e}")
-        sys.exit()
-
-
-if __name__ == "__main__":
-    main()

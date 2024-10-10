@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Set timeout for row expiration
                 setTimeout(() => {
                     newRow.classList.add('expired');
-                }, 40000);
+                }, 30000);
             } else {
                 console.error("Invalid bid data received for symbol:", symbol, bidData);
             }

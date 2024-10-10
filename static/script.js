@@ -38,33 +38,33 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Received market data:', data);
 
     if (subscribeBtn) {
-        subscribeBtn.addEventListener('click', () => {
-            isSubscribed = true;
-            if (priceInput) {
-                priceInput.disabled = false;
-                priceInput.placeholder = '';
-            }
-            fetch('/MarketData.html')
-                .then(response => {
-                    if (response.ok) {
-                        return response.text();
-                    } else {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                })
-                .then(html => {
-                    document.body.innerHTML = html;
-                    // Reinitialize WebSocket connection for MarketData page
-                    const script = document.createElement('script');
-                    script.src = '/static/MarketData.js';
-                    document.body.appendChild(script);
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert(`Unable to load Market Data page. Error: ${error.message}`);
-                });
-        });
-    }
+    subscribeBtn.addEventListener('click', () => {
+        isSubscribed = true;
+        if (priceInput) {
+            priceInput.disabled = false;
+            priceInput.placeholder = '';
+        }
+        fetch('http://127.0.0.1:8000/MarketData.html')
+            .then(response => {
+                if (response.ok) {
+                    return response.text();
+                } else {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+            })
+            .then(html => {
+                document.getElementById('market-data-content').innerHTML = html;
+                // Reinitialize WebSocket connection for MarketData
+                const script = document.createElement('script');
+                script.src = '/static/MarketData.js';
+                document.body.appendChild(script);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('market-data-content').innerHTML = 'Error loading Market Data. Please try again later.';
+            });
+    });
+}
     if (unsubscribeBtn) {
         unsubscribeBtn.addEventListener('click', () => {
             isSubscribed = false;

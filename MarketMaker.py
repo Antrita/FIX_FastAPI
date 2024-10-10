@@ -20,6 +20,7 @@ def gen_order_id():
 class MarketMaker(fix.Application):
     def __init__(self):
         super().__init__()
+        self.running = True
         self.session_id = None
         self.symbols = ["USD/BRL"]
         self.prices = {symbol: random.uniform(100, 1000) for symbol in self.symbols}
@@ -128,7 +129,7 @@ class MarketMaker(fix.Application):
             fix.Session.sendToTarget(snapshot, session_id)
 
     def update_prices(self):
-        while True:
+        while self.running:
             for symbol in self.symbols:
                 self.prices[symbol] += random.uniform(-0.5, 0.5)
                 self.prices[symbol] = max(0.01, self.prices[symbol])

@@ -57,14 +57,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (priceInput) {
-        // Remove any event listeners that might be preventing input
+
         priceInput.disabled = false;
         priceInput.placeholder = 'Enter price';
     }
 
-    if (orderForm) {
+     if (orderForm) {
         orderForm.addEventListener('submit', (e) => {
             e.preventDefault();
+            // Remove any check for isSubscribed here
             const formData = new FormData(orderForm);
             const order = {
                 action: formData.get('action'),
@@ -76,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const clOrdID = generateClOrdID();
             console.log('Order placed:', order, 'ClOrdID:', clOrdID);
 
-            if (orderMessage) {
+           if (orderMessage) {
                 orderMessage.textContent = `Order placed successfully! ClOrdID: ${clOrdID}`;
                 orderMessage.className = '';
                 setTimeout(() => {

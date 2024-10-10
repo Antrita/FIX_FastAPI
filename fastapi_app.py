@@ -74,6 +74,16 @@ async def update_market_data(data: dict = None):
         return {"status": "success"}
     return {"status": "error", "message": "Invalid data provided"}
 
+@app.post("/check_order_status")
+async def check_order_status(order_id: str):
+    if hasattr(app, 'market_maker'):
+        status = app.market_maker.get_order_status(order_id)
+        if status:
+            return status
+        else:
+            raise HTTPException(status_code=404, detail="Order not found")
+    else:
+        raise HTTPException(status_code=500, detail="MarketMaker not initialized")
 async def broadcast_market_data(data):
     if connections:
         message = json.dumps({"type": "market_data", "data": data})

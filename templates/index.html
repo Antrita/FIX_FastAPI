@@ -34,7 +34,8 @@
 
             <button type="submit">Place Order</button>
         </form>
-        <div id="order-message" class="hidden"></div>
+        <div id="order-message" ></div>
+        <span id="order-status"></span>
     </div>
 
     <div id="market-data">
@@ -43,14 +44,14 @@
         <button id="unsubscribe-btn">Unsubscribe</button>
     </div>
 
-    <div id="order-status">
-        <h2>Order Status</h2>
-        <form id="status-form">
-            <label for="clordid">ClOrdID:</label>
-            <input type="text" name="clordid" id="clordid" required>
-            <button type="submit">Check Status</button>
-        </form>
-        <div id="status-response" class="hidden"></div>
-    </div>
+    <form id="status-form">
+  <label for="clordid">ClOrdID:</label>
+
+  <input type="text" id="clordid" name="clordid" required>
+  <button type="submit">Check Status</button>
+</form>
+
+<div id="status-response" class="hidden"></div>
+
 </body>
 </html>

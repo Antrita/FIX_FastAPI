@@ -74,15 +74,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 price: formData.get('price')
             };
 
-            const clOrdID = generateClOrdID();
-            console.log('Order placed:', order, 'ClOrdID:', clOrdID);
+             lastGeneratedClOrdID = generateClOrdID(); // Store the generated ClOrdID
+            console.log('Order placed:', order, 'ClOrdID:', lastGeneratedClOrdID);
 
            if (orderMessage) {
                 orderMessage.textContent = `Order placed successfully! ClOrdID: ${clOrdID}`;
                 orderMessage.className = '';
                 setTimeout(() => {
                     orderMessage.className = 'hidden';
-                }, 3000);
+                }, 5000);
             }
         });
     }

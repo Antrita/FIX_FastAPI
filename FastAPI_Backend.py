@@ -1,6 +1,7 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse
 import uvicorn
 import json
 import asyncio
@@ -22,9 +23,7 @@ async def get():
 
 @app.get("/MarketData.html", response_class=HTMLResponse)
 async def get_market_data():
-    with open("templates/MarketData.html") as f:
-        return f.read()
-
+    return FileResponse("templates/MarketData.html")
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
@@ -41,10 +40,12 @@ async def websocket_endpoint(websocket: WebSocket):
 @app.post("/update_market_data")
 @app.get("/update_market_data")
 async def update_market_data(data: dict = None):
-    if data:
-        await broadcast_market_data(data)
+    if data and "symbol" in data:
+        symbol = data["symbol"]
+        market_data[symbol] = data
+        await broadcast_market_data({symbol: data})
         return {"status": "success"}
-    return {"status": "error", "message": "No data provided"}
+    return {"status": "error", "message": "Invalid data provided"}
 
 async def broadcast_market_data(data):
     if connections:

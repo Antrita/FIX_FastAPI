@@ -10,10 +10,6 @@ from fastapi import FastAPI, WebSocket
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 import uvicorn
-import logging
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 def gen_order_id():
     return str(random.randint(100000, 999999))
@@ -26,17 +22,16 @@ class MarketMaker(fix.Application):
         self.prices = {symbol: random.uniform(100, 1000) for symbol in self.symbols}
         self.subscriptions = set()
         self.fastapi_url = "http://localhost:8000/update_market_data"
-        self.running = True
 
     def onCreate(self, session_id):
         self.session_id = session_id
-        logger.info(f"Session created - {session_id}")
+        print(f"Session created - {session_id}")
 
     def onLogon(self, session_id):
-        logger.info(f"Logon - {session_id}")
+        print(f"Logon - {session_id}")
 
     def onLogout(self, session_id):
-        logger.info(f"Logout - {session_id}")
+        print(f"Logout - {session_id}")
 
     def toAdmin(self, message, session_id):
         pass
@@ -45,10 +40,10 @@ class MarketMaker(fix.Application):
         pass
 
     def toApp(self, message, session_id):
-        logger.info(f"Sending message: {message}")
+        print(f"Sending message: {message}")
 
     def fromApp(self, message, session_id):
-        logger.info(f"Received message: {message}")
+        print(f"Received message: {message}")
         msgType = fix.MsgType()
         message.getHeader().getField(msgType)
 
@@ -129,31 +124,31 @@ class MarketMaker(fix.Application):
 
             fix.Session.sendToTarget(snapshot, session_id)
 
-    def stream_bids(self):
-        trader = "Trader"
-        while self.running:
-            try:
-                for symbol in self.symbols:
-                    bid = round(self.prices[symbol] + random.uniform(-0.5, 0.5), 2)
-                    data = {
-                        "symbol": symbol,
-                        "bid": bid,
-                        "trader": trader
-                    }
-                    logger.info(f"Preparing to send bid: {data}")
-                    try:
-                        response = requests.post(self.fastapi_url, json=data)
-                        logger.info(f"Bid sent. Response status: {response.status_code}")
-                        if response.status_code != 200:
-                            logger.error(f"Failed to send bid. Response: {response.text}")
-                    except requests.exceptions.RequestException as e:
-                        logger.error(f"Error sending bid to FastAPI: {e}")
-                time.sleep(5)  # Stream new bids every 4 seconds
-            except Exception as e:
-                logger.error(f"Error in stream_bids: {e}")
-                time.sleep(6)
+    def update_prices(self):
+        while True:
+            for symbol in self.symbols:
+                self.prices[symbol] += random.uniform(-0.5, 0.5)
+                self.prices[symbol] = max(0.01, self.prices[symbol])
+                self.send_update_to_fastapi(symbol)
 
-    # Wait a bit before retrying if there's an error
+            for md_req_id in self.subscriptions:
+                self.send_market_data(md_req_id, self.session_id)
+
+            time.sleep(1)
+
+    def send_update_to_fastapi(self, symbol):
+        data = {
+            "symbol": symbol,
+            "bid": round(self.prices[symbol] - 0.01, 2),
+            "ask": round(self.prices[symbol] + 0.01, 2),
+            "trader": "MarketMaker"  # Add this line to include trader information
+        }
+        try:
+            response = requests.post(self.fastapi_url, json=data)
+            if response.status_code != 200:
+                print(f"Error sending update to FastAPI: {response.status_code}")
+        except requests.exceptions.RequestException as e:
+            print(f"Error sending update to FastAPI: {e}")
 
     def start(self):
         settings = fix.SessionSettings("Server.cfg")
@@ -163,11 +158,8 @@ class MarketMaker(fix.Application):
 
         acceptor.start()
 
-        # Start the bid streaming thread
-        threading.Thread(target=self.stream_bids, daemon=True).start()
-
-    def stop(self):
-        self.running = False
+        # Start the price updating thread
+        threading.Thread(target=self.update_prices, daemon=True).start()
 
 # FastAPI app
 app = FastAPI()
@@ -184,11 +176,6 @@ async def get():
     with open("templates/index.html") as f:
         return f.read()
 
-@app.get("/MarketData.html", response_class=HTMLResponse)
-async def get_market_data():
-    with open("templates/MarketData.html") as f:
-        return f.read()
-
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
@@ -200,13 +187,11 @@ async def websocket_endpoint(websocket: WebSocket):
         connections.remove(websocket)
 
 @app.post("/update_market_data")
-@app.get("/update_market_data")
-async def update_market_data(data: dict = None):
-    if data:
-        symbol = data["symbol"]
-        market_data[symbol] = {"bid": data["bid"], "trader": data["trader"]}
-        await broadcast_market_data()
-    return market_data
+async def update_market_data(data: dict):
+    symbol = data["symbol"]
+    market_data[symbol] = {"bid": data["bid"], "ask": data["ask"]}
+    await broadcast_market_data()
+    return {"status": "success"}
 
 async def broadcast_market_data():
     if connections:
@@ -215,46 +200,42 @@ async def broadcast_market_data():
             try:
                 await connection.send_json(message)
             except Exception as e:
-                logger.error(f"Error sending message to WebSocket: {e}")
-                connections.remove(connection)
+                print(f"Error sending message to WebSocket: {e}")
 
 def run_fastapi():
     uvicorn.run(app, host="127.0.0.1", port=8000)
 
+
 def run_market_maker(application):
     try:
         application.start()
-        while application.running:
+        while True:
             time.sleep(1)
     except (fix.ConfigError, fix.RuntimeError) as e:
-        logger.error(f"Error in market maker thread: {e}")
-    finally:
-        application.stop()
+        print(f"Error in market maker thread: {e}")
+
 
 def main():
     try:
         application = MarketMaker()
 
-        # FastAPI thread
+        # Start FastAPI in a separate thread
         fastapi_thread = threading.Thread(target=run_fastapi, daemon=True)
         fastapi_thread.start()
 
-        # MarketMaker thread
+        # Start MarketMaker in a separate thread
         market_maker_thread = threading.Thread(target=run_market_maker, args=(application,), daemon=True)
         market_maker_thread.start()
 
-        logger.info("Market Maker, FastAPI server, and Bid Streaming started.")
+        print("Market Maker and FastAPI server started.")
 
         # Keep the main thread running
         while True:
             time.sleep(1)
-    except KeyboardInterrupt:
-        logger.info("Shutting down...")
-        application.stop()
     except Exception as e:
-        logger.error(f"Error in main thread: {e}")
-    finally:
-        logger.info("MarketMaker shut down.")
+        print(f"Error in main thread: {e}")
+        sys.exit()
+
 
 if __name__ == "__main__":
     main()

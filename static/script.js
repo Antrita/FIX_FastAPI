@@ -7,7 +7,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const orderMessage = document.getElementById('order-message');
     const statusForm = document.getElementById('status-form');
     const priceInput = document.getElementById('price-input');
-
     let isSubscribed = false;
 
     if (socket) {
@@ -25,6 +24,18 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
     }
+        socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.type === 'market_data') {
+                console.log('Received market data:', data.data);
+                // Handle market data update here
+            }
+        };
+    }
+
+     function updateMarketData(data) {
+        // Update the UI with the received market data
+        console.log('Received market data:', data);
 
     if (subscribeBtn) {
         subscribeBtn.addEventListener('click', () => {
@@ -33,13 +44,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 priceInput.disabled = false;
                 priceInput.placeholder = '';
             }
-            fetch('MarketData.html')
+            fetch('/MarketData.html')
                 .then(response => {
                     if (response.ok) {
-                        window.location.href = 'MarketData.html';
+                        return response.text();
                     } else {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
+                })
+                .then(html => {
+                    document.body.innerHTML = html;
+                    // Reinitialize WebSocket connection for MarketData page
+                    const script = document.createElement('script');
+                    script.src = '/static/MarketData.js';
+                    document.body.appendChild(script);
                 })
                 .catch(error => {
                     console.error('Error:', error);
@@ -47,7 +65,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
         });
     }
-
     if (unsubscribeBtn) {
         unsubscribeBtn.addEventListener('click', () => {
             isSubscribed = false;

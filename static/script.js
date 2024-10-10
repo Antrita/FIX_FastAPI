@@ -77,8 +77,8 @@ document.addEventListener('DOMContentLoaded', () => {
              lastGeneratedClOrdID = generateClOrdID(); // Store the generated ClOrdID
             console.log('Order placed:', order, 'ClOrdID:', lastGeneratedClOrdID);
 
-           if (orderMessage) {
-                orderMessage.textContent = `Order placed successfully! ClOrdID: ${clOrdID}`;
+            if (orderMessage) {
+                orderMessage.textContent = `Order placed successfully! ClOrdID: 12345`;
                 orderMessage.className = '';
                 setTimeout(() => {
                     orderMessage.className = 'hidden';

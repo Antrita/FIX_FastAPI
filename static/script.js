@@ -65,12 +65,12 @@ document.addEventListener('DOMContentLoaded', () => {
      if (orderForm) {
         orderForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            // Remove any check for isSubscribed here
             const formData = new FormData(orderForm);
             const order = {
                 action: formData.get('action'),
                 symbol: formData.get('symbol'),
                 quantity: formData.get('quantity'),
+                orderType: formData.get('order-type'),
                 price: formData.get('price')
             };
 
@@ -110,6 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <p>Action: ${action}</p>
                     <p>Symbol: ${symbol}</p>
                     <p>Quantity: ${quantity}</p>
+                    <p>Order Type: ${document.getElementById('order-type').value}</p>
                     <p>Price: ${price}</p>
                 `;
                 statusResponse.className = ''; // Remove 'hidden' class

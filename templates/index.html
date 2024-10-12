@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -28,7 +29,13 @@
 
             <label for="quantity">Quantity:</label>
             <input type="number" name="quantity" id="quantity" required>
-
+            Order Type:
+<select id="order-type" name="order-type" required>
+    <option value="Market">Market Order</option>
+    <option value="Limit">Limit Order</option>
+    <option value="Stop">Stop Order</option>
+    <option value="StopLimit">Stop Limit Order</option>
+</select>
             <label for="price-input">Price:</label>
             <input type="number" name="price" id="price-input" required>
 

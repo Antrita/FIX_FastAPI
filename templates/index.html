@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trading Platform</title>
     <link rel="stylesheet" href="/static/style.css">
-    <script src="/static/script.js"></script>
 </head>
 <body>
     <h1>Trading Platform</h1>
@@ -19,46 +17,68 @@
         <h2>Order Entry</h2>
         <form id="order-form">
             <label for="action">Action:</label>
-            <select name="action" id="action">
+            <select id="action" name="action" required>
                 <option value="Buy">Buy</option>
                 <option value="Sell">Sell</option>
             </select>
 
             <label for="symbol">Symbol:</label>
-            <input type="text" name="symbol" id="symbol" required>
+            <input type="text" id="symbol" name="symbol" required>
 
             <label for="quantity">Quantity:</label>
-            <input type="number" name="quantity" id="quantity" required>
-            Order Type:
-<select id="order-type" name="order-type" required>
-    <option value="Market">Market Order</option>
-    <option value="Limit">Limit Order</option>
-    <option value="Stop">Stop Order</option>
-    <option value="StopLimit">Stop Limit Order</option>
-</select>
+            <input type="number" id="quantity" name="quantity" required>
+
+            <label for="order-type">Order Type:</label>
+            <select id="order-type" name="order-type" required>
+                <option value="Market">Market Order</option>
+                <option value="Limit">Limit Order</option>
+                <option value="Stop">Stop Order</option>
+                <option value="StopLimit">Stop Limit Order</option>
+            </select>
+
+            <div id="limit-fields" style="display: none;">
+                <label for="limit-price">Limit Price:</label>
+                <input type="number" id="limit-price" name="limit-price" step="0.01">
+            </div>
+
+            <div id="stop-fields" style="display: none;">
+                <label for="stop-price">Stop Price:</label>
+                <input type="number" id="stop-price" name="stop-price" step="0.01">
+            </div>
+
+            <div id="stop-limit-fields" style="display: none;">
+                <label for="stop-limit-stop-price">Stop Price:</label>
+                <input type="number" id="stop-limit-stop-price" name="stop-limit-stop-price" step="0.01">
+                <label for="stop-limit-limit-price">Limit Price:</label>
+                <input type="number" id="stop-limit-limit-price" name="stop-limit-limit-price" step="0.01">
+            </div>
+
             <label for="price-input">Price:</label>
-            <input type="number" name="price" id="price-input" required>
+            <input type="number" id="price-input" name="price" step="0.01" required>
 
             <button type="submit">Place Order</button>
         </form>
-        <div id="order-message" ></div>
-        <span id="order-status"></span>
+        <div id="order-message" class="hidden"></div>
     </div>
 
     <div id="market-data">
         <h2>Market Data</h2>
         <button id="subscribe-btn">Subscribe</button>
         <button id="unsubscribe-btn">Unsubscribe</button>
+
     </div>
 
-    <form id="status-form">
-  <label for="clordid">ClOrdID:</label>
+    <div id="order-status">
+        <h2>Order Status</h2>
+        <form id="status-form">
+            <label for="clordid">ClOrdID:</label>
+            <input type="text" id="clordid" name="clordid" required>
+            <button type="submit">Check Status</button>
+        </form>
+        <div id="status-response" class="hidden"></div>
+    </div>
 
-  <input type="text" id="clordid" name="clordid" required>
-  <button type="submit">Check Status</button>
-</form>
 
-<div id="status-response" class="hidden"></div>
-
+    <script src="/static/script.js"></script>
 </body>
 </html>

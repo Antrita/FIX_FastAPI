@@ -58,33 +58,6 @@ class MarketMaker(fix.Application):
         elif msgType.getValue() == fix.MsgType_MarketDataRequest:
             self.handle_market_data_request(message, session_id)
 
-    '''def handle_new_order(self, message, session_id):
-        order = fix44.ExecutionReport()
-        order.setField(fix.OrderID(gen_order_id()))
-        order.setField(fix.ExecID(gen_order_id()))
-        order.setField(fix.ExecType(fix.ExecType_NEW))
-        order.setField(fix.OrdStatus(fix.OrdStatus_NEW))
-
-        clOrdID = fix.ClOrdID()
-        symbol = fix.Symbol()
-        side = fix.Side()
-        orderQty = fix.OrderQty()
-
-        message.getField(clOrdID)
-        message.getField(symbol)
-        message.getField(side)
-        message.getField(orderQty)
-
-        order.setField(clOrdID)
-        order.setField(symbol)
-        order.setField(side)
-        order.setField(orderQty)
-        order.setField(fix.LastQty(orderQty.getValue()))
-        order.setField(fix.LastPx(self.prices[symbol.getValue()]))
-        order.setField(fix.CumQty(orderQty.getValue()))
-        order.setField(fix.AvgPx(self.prices[symbol.getValue()]))
-
-        fix.Session.sendToTarget(order, session_id)'''
 
     def handle_new_order(self, message, session_id):
         order = fix44.ExecutionReport()

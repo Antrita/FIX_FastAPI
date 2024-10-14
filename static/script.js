@@ -7,9 +7,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const orderMessage = document.getElementById('order-message');
     const statusForm = document.getElementById('status-form');
     const priceInput = document.getElementById('price-input');
+    const orderTypeSelect = document.getElementById('order-type');
+    const limitFields = document.getElementById('limit-fields');
+    const stopFields = document.getElementById('stop-fields');
+    const stopLimitFields = document.getElementById('stop-limit-fields');
     let isSubscribed = false;
     let marketDataWindow = null;
+     function generateDynamicForm(orderType) {
+        limitFields.style.display = 'none';
+        stopFields.style.display = 'none';
+        stopLimitFields.style.display = 'none';
 
+        switch (orderType) {
+            case 'Limit':
+                limitFields.style.display = 'block';
+                break;
+            case 'Stop':
+                stopFields.style.display = 'block';
+                break;
+            case 'StopLimit':
+                stopLimitFields.style.display = 'block';
+                break;
+        }
+    }
     if (socket) {
         socket.onopen = () => {
             if (connectionStatus) {
@@ -29,14 +49,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = JSON.parse(event.data);
             if (data.type === 'market_data') {
                 console.log('Received market data:', data.data);
-                // Handle market data update here
+                updateMarketData(data.data);
             }
         };
     }
 
     function updateMarketData(data) {
-        // Update the UI with the received market data
-        console.log('Received market data:', data);
+        const marketDataContent = document.getElementById('market-data-content');
+        if (marketDataContent) {
+            marketDataContent.innerHTML = JSON.stringify(data, null, 2);
+        }
     }
 
     if (subscribeBtn) {
@@ -57,12 +79,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (priceInput) {
-
         priceInput.disabled = false;
         priceInput.placeholder = 'Enter price';
     }
 
-     if (orderForm) {
+    orderTypeSelect.addEventListener('change', () => {
+        limitFields.style.display = 'none';
+        stopFields.style.display = 'none';
+        stopLimitFields.style.display = 'none';
+
+        switch (orderTypeSelect.value) {
+            case 'Limit':
+                limitFields.style.display = 'block';
+                break;
+            case 'Stop':
+                stopFields.style.display = 'block';
+                break;
+            case 'StopLimit':
+                stopLimitFields.style.display = 'block';
+                break;
+        }
+    });
+
+    if (orderForm) {
         orderForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const formData = new FormData(orderForm);
@@ -74,11 +113,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 price: formData.get('price')
             };
 
-             lastGeneratedClOrdID = generateClOrdID(); // Store the generated ClOrdID
+            // Generate dynamic form based on order type
+            generateDynamicForm(order.orderType);
+
+           switch (order.orderType) {
+                case 'Limit':
+                    order.limitPrice = formData.get('limit-price');
+                    break;
+                case 'Stop':
+                    order.stopPrice = formData.get('stop-price');
+                    break;
+                case 'StopLimit':
+                    order.stopPrice = formData.get('stop-limit-stop-price');
+                    order.limitPrice = formData.get('stop-limit-limit-price');
+                    break;
+                }
+            const lastGeneratedClOrdID = generateClOrdID();
             console.log('Order placed:', order, 'ClOrdID:', lastGeneratedClOrdID);
 
             if (orderMessage) {
-                orderMessage.textContent = `Order placed successfully! ClOrdID: 12345`;
+                orderMessage.textContent = `Order placed successfully! ClOrdID: ${lastGeneratedClOrdID}`;
                 orderMessage.className = '';
                 setTimeout(() => {
                     orderMessage.className = 'hidden';
@@ -97,26 +151,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const statusResponse = document.getElementById('status-response');
             if (clOrdID === '12345') {
-                // Fetch details from the order entry form
                 const action = document.getElementById('action').value;
                 const symbol = document.getElementById('symbol').value;
                 const quantity = document.getElementById('quantity').value;
+                const orderType = document.getElementById('order-type').value;
                 const price = document.getElementById('price-input').value;
+
+                let additionalInfo = '';
+                switch (orderType) {
+                    case 'Limit':
+                        additionalInfo = `<p>Limit Price: ${document.getElementById('limit-price').value}</p>`;
+                        break;
+                    case 'Stop':
+                        additionalInfo = `<p>Stop Price: ${document.getElementById('stop-price').value}</p>`;
+                        break;
+                    case 'StopLimit':
+                        additionalInfo = `
+                            <p>Stop Price: ${document.getElementById('stop-limit-stop-price').value}</p>
+                            <p>Limit Price: ${document.getElementById('stop-limit-limit-price').value}</p>
+                        `;
+                        break;
+                }
 
                 statusResponse.innerHTML = `
                     <h3>Order Status:</h3>
-                    <p>ClOrdID: 12345</p>
+                    <p>ClOrdID: ${clOrdID}</p>
                     <p>Status: Order Placed</p>
                     <p>Action: ${action}</p>
                     <p>Symbol: ${symbol}</p>
                     <p>Quantity: ${quantity}</p>
-                    <p>Order Type: ${document.getElementById('order-type').value}</p>
+                    <p>Order Type: ${orderType}</p>
+                    ${additionalInfo}
                     <p>Price: ${price}</p>
                 `;
-                statusResponse.className = ''; // Remove 'hidden' class
+                statusResponse.className = '';
             } else {
                 statusResponse.textContent = 'Order not found.';
-                statusResponse.className = ''; // Remove 'hidden' class
+                statusResponse.className = '';
             }
         });
     }

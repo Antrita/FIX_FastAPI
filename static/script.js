@@ -1,4 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
+    generateDynamicForm(document.getElementById('order-type').value);
+
+    document.getElementById('order-type').addEventListener('change', function() {
+        generateDynamicForm(this.value);
+    });
+
     const socket = new WebSocket(`ws://${window.location.host}/ws`);
     const connectionStatus = document.getElementById('connection-status');
     const subscribeBtn = document.getElementById('subscribe-btn');
@@ -13,23 +19,36 @@ document.addEventListener('DOMContentLoaded', () => {
     const stopLimitFields = document.getElementById('stop-limit-fields');
     let isSubscribed = false;
     let marketDataWindow = null;
-     function generateDynamicForm(orderType) {
-        limitFields.style.display = 'none';
-        stopFields.style.display = 'none';
-        stopLimitFields.style.display = 'none';
+  function generateDynamicForm(orderType) {
+    const priceField = document.getElementById('price-field');
+    const marketFields = document.getElementById('Market');
+    const limitFields = document.getElementById('limit-fields');
+    const stopFields = document.getElementById('stop-fields');
+    const stopLimitFields = document.getElementById('stop-limit-fields');
 
-        switch (orderType) {
-            case 'Limit':
-                limitFields.style.display = 'block';
-                break;
-            case 'Stop':
-                stopFields.style.display = 'block';
-                break;
-            case 'StopLimit':
-                stopLimitFields.style.display = 'block';
-                break;
-        }
+    // Hide all fields initially
+    priceField.style.display = 'none';
+    marketFields.style.display = 'none';
+    limitFields.style.display = 'none';
+    stopFields.style.display = 'none';
+    stopLimitFields.style.display = 'none';
+
+    // Show specific fields based on order type
+    switch (orderType) {
+        case 'Market':
+            priceField.style.display = 'block';
+            break;
+        case 'Limit':
+            limitFields.style.display = 'block';
+            break;
+        case 'Stop':
+            stopFields.style.display = 'block';
+            break;
+        case 'StopLimit':
+            stopLimitFields.style.display = 'block';
+            break;
     }
+}
     if (socket) {
         socket.onopen = () => {
             if (connectionStatus) {

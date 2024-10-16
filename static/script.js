@@ -48,9 +48,23 @@ document.addEventListener('DOMContentLoaded', () => {
             stopFields.style.display = 'block';
             const stopPrice = 60;
             const stopPriceBrl = stopPrice * usdToBrlRate;
-            document.getElementById('stop-price').placeholder = `Enter stop price (Calculated BRL price: ${stopPriceBrl.toFixed(2)})`;
+             const stopPriceInput = document.getElementById('stop-price');
+             stopPriceInput.placeholder = `Enter stop price (Calculated BRL price: ${stopPriceBrl.toFixed(2)})`;
+            // Add warning display for Stop order
+            stopPriceInput.addEventListener('input', function() {
+                const warningElement = this.nextElementSibling || document.createElement('p');
+                warningElement.style.color = 'red';
+                if (parseFloat(this.value) > stopPriceBrl) {
+                    warningElement.textContent = `Warning: Price exceeds ${stopPriceBrl.toFixed(2)} BRL`;
+                    if (!this.nextElementSibling) {
+                        this.parentNode.insertBefore(warningElement, this.nextSibling);
+                    }
+                } else {
+                    warningElement.textContent = '';
+                }
+            });
             break;
-        case 'StopLimit':
+         case 'StopLimit':
             stopLimitFields.style.display = 'block';
             const stopLimitStopPrice = document.getElementById('stop-limit-stop-price');
             const stopLimitLimitPrice = document.getElementById('stop-limit-limit-price');
@@ -61,20 +75,44 @@ document.addEventListener('DOMContentLoaded', () => {
             stopLimitStopPrice.addEventListener('input', function() {
                 const stopValue = parseFloat(this.value);
                 if (!isNaN(stopValue)) {
-                    stopLimitLimitPrice.min = stopValue;
-                    if (parseFloat(stopLimitLimitPrice.value) < stopValue) {
-                        stopLimitLimitPrice.value = stopValue;
-                    }
                 }
             });
 
             stopLimitLimitPrice.addEventListener('input', function() {
                 const limitValue = parseFloat(this.value);
                 const stopValue = parseFloat(stopLimitStopPrice.value);
-                if (!isNaN(limitValue) && !isNaN(stopValue) && limitValue < stopValue) {
-                    this.value = stopValue;
-                }
             });
+
+            const actionSelect = document.getElementById('action');
+            const validateStopLimitPrices = function() {
+                const action = actionSelect.value;
+                const stopValue = parseFloat(stopLimitStopPrice.value);
+                const limitValue = parseFloat(stopLimitLimitPrice.value);
+                let warningMessage = '';
+
+                if (!isNaN(stopValue) && !isNaN(limitValue)) {
+                    if (action === 'Buy' && stopValue > limitValue) {
+                        warningMessage = 'For buy orders, stop price should not be higher than limit price.';
+                    } else if (action === 'Sell' && stopValue < limitValue) {
+                        warningMessage = 'For sell orders, stop price should not be lower than limit price.';
+                    }
+                }
+
+                const warningElement = stopLimitFields.querySelector('.warning') || document.createElement('p');
+                warningElement.textContent = warningMessage;
+                warningElement.style.color = 'red';
+                warningElement.className = 'warning';
+                if (warningMessage && !stopLimitFields.querySelector('.warning')) {
+                    stopLimitFields.appendChild(warningElement);
+                } else if (!warningMessage) {
+                    warningElement.remove();
+                }
+            };
+
+            stopLimitStopPrice.addEventListener('input', validateStopLimitPrices);
+            stopLimitLimitPrice.addEventListener('input', validateStopLimitPrices);
+            actionSelect.addEventListener('change', validateStopLimitPrices);
+
             break;
     }
 }
@@ -114,11 +152,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateMarketData(data) {
-        const marketDataContent = document.getElementById('market-data-content');
-        if (marketDataContent) {
-            marketDataContent.innerHTML = JSON.stringify(data, null, 2);
+    const marketDataContent = document.getElementById('market-data-content');
+    if (marketDataContent) {
+        marketDataContent.innerHTML = JSON.stringify(data, null, 2);
+    }
+
+    // Update the price input field if it exists and is not focused
+    const priceInput = document.getElementById('price-input');
+    if (priceInput && !priceInput.matches(':focus')) {
+        if (data.USD_BRL && data.USD_BRL.bid) {
+            priceInput.value = data.USD_BRL.bid;
         }
     }
+
+    // Update other relevant fields if necessary
+    // For example, updating the market price field for Market orders
+    const marketPriceField = document.getElementById('market-price');
+    if (marketPriceField && data.USD_BRL && data.USD_BRL.bid) {
+        marketPriceField.value = data.USD_BRL.bid;
+    }
+}
+
+
 
     if (subscribeBtn) {
         subscribeBtn.addEventListener('click', () => {

@@ -40,6 +40,11 @@ document.addEventListener('DOMContentLoaded', () => {
             break;
         case 'Limit':
             limitFields.style.display = 'block';
+
+            const samplePrice = 65;
+            const limit = samplePrice * 1.1;
+            // Set the warning placeholder
+            document.getElementById('limit-price').placeholder = `Enter limit price (Warning: Don't exceed ${limit.toFixed(2)})`;
             break;
         case 'Stop':
             stopFields.style.display = 'block';

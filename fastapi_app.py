@@ -84,6 +84,16 @@ async def check_order_status(order_id: str):
             raise HTTPException(status_code=404, detail="Order not found")
     else:
         raise HTTPException(status_code=500, detail="MarketMaker not initialized")
+@app.get("/get_current_market_price/{symbol}")
+async def get_current_market_price(symbol: str):
+    if hasattr(app, 'market_maker'):
+        price = app.market_maker.get_current_market_price(symbol)
+        if price is not None:
+            return {"symbol": symbol, "price": price}
+        else:
+            raise HTTPException(status_code=404, detail="Symbol not found")
+    else:
+        raise HTTPException(status_code=500, detail="MarketMaker not initialized")
 async def broadcast_market_data(data):
     if connections:
         message = json.dumps({"type": "market_data", "data": data})

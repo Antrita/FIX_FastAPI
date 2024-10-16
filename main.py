@@ -10,7 +10,6 @@ def run_fastapi():
 def run_market_maker(application):
     try:
         application.start()
-        # Start the price updating immediately
         application.update_prices()
     except Exception as e:
         print(f"Error in market maker thread: {e}")
@@ -18,6 +17,7 @@ def run_market_maker(application):
 def main():
     try:
         application = MarketMaker()
+        app.market_maker = application  # Attach MarketMaker to FastAPI app
 
         # Start FastAPI in a separate thread
         fastapi_thread = threading.Thread(target=run_fastapi, daemon=True)

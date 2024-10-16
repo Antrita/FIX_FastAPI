@@ -58,6 +58,10 @@ class MarketMaker(fix.Application):
         elif msgType.getValue() == fix.MsgType_MarketDataRequest:
             self.handle_market_data_request(message, session_id)
 
+    def get_current_market_price(self, symbol):
+        if symbol in self.prices:
+            return self.prices[symbol]
+        return None
 
     def handle_new_order(self, message, session_id):
         order = fix44.ExecutionReport()

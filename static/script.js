@@ -20,40 +20,70 @@ document.addEventListener('DOMContentLoaded', () => {
     let isSubscribed = false;
     let marketDataWindow = null;
   function generateDynamicForm(orderType) {
-    const priceField = document.getElementById('price-field');
-    const marketFields = document.getElementById('Market');
-    const limitFields = document.getElementById('limit-fields');
-    const stopFields = document.getElementById('stop-fields');
-    const stopLimitFields = document.getElementById('stop-limit-fields');
+        const priceField = document.getElementById('price-field');
+        const marketFields = document.getElementById('Market');
+        const limitFields = document.getElementById('limit-fields');
+        const stopFields = document.getElementById('stop-fields');
+        const stopLimitFields = document.getElementById('stop-limit-fields');
 
-    // Hide all fields initially
-    priceField.style.display = 'none';
-    marketFields.style.display = 'none';
-    limitFields.style.display = 'none';
-    stopFields.style.display = 'none';
-    stopLimitFields.style.display = 'none';
+        // Hide all fields initially
+        priceField.style.display = 'none';
+        marketFields.style.display = 'none';
+        limitFields.style.display = 'none';
+        stopFields.style.display = 'none';
+        stopLimitFields.style.display = 'none';
+        const usdToBrlRate = 5.25;
+        // Show specific fields based on order type
+        switch (orderType) {
+            case 'Market':
+                priceField.style.display = 'block';
+                break;
+            case 'Limit':
+                limitFields.style.display = 'block';
 
-    // Show specific fields based on order type
-    switch (orderType) {
-        case 'Market':
-            priceField.style.display = 'block';
-            break;
-        case 'Limit':
-            limitFields.style.display = 'block';
-
-            const samplePrice = 65;
-            const limit = samplePrice * 1.1;
-            // Set the warning placeholder
-            document.getElementById('limit-price').placeholder = `Enter limit price (Warning: Don't exceed ${limit.toFixed(2)})`;
-            break;
-        case 'Stop':
-            stopFields.style.display = 'block';
-            break;
-        case 'StopLimit':
+                const samplePrice = 65;
+                const limit = samplePrice * 1.1;
+                // Set the warning placeholder
+                document.getElementById('limit-price').placeholder = `Enter limit price (Warning: Don't exceed ${limit.toFixed(2)})`;
+                break;
+            case 'Stop':
+                stopFields.style.display = 'block';
+                const stopPrice = 60;
+                const stopPriceBrl = stopPrice * usdToBrlRate;
+                document.getElementById('stop-price').placeholder = `Enter stop price (Calculated BRL price: ${stopPriceBrl.toFixed(2)})`;
+                break;
+             case 'StopLimit':
             stopLimitFields.style.display = 'block';
+            const stopLimitStopPrice = document.getElementById('stop-limit-stop-price');
+            const stopLimitLimitPrice = document.getElementById('stop-limit-limit-price');
+
+            stopLimitStopPrice.addEventListener('input', function() {
+                stopLimitLimitPrice.min = this.value;
+                if (parseFloat(stopLimitLimitPrice.value) < parseFloat(this.value)) {
+                    stopLimitLimitPrice.value = this.value;
+                }
+            });
+
+            stopLimitLimitPrice.addEventListener('input', function() {
+                if (parseFloat(this.value) < parseFloat(stopLimitStopPrice.value)) {
+                    this.value = stopLimitStopPrice.value;
+                }
+            });
+
             break;
     }
 }
+
+    // Function for validation logic
+    function validateStopLimitInput() {
+        const enteredPrice = parseFloat(this.value);
+        const minStopPrice = 61;
+        const maxStopLimitPrice = 64;
+        if (enteredPrice < minStopPrice || enteredPrice > maxStopLimitPrice) {
+            alert(`Warning: The stop limit price must be between ${minStopPrice} and ${maxStopLimitPrice}.`);
+        }
+    }
+
     if (socket) {
         socket.onopen = () => {
             if (connectionStatus) {

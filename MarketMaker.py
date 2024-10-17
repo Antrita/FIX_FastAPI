@@ -68,27 +68,45 @@ class MarketMaker(fix.Application):
         order_id = gen_order_id()
         order.setField(fix.OrderID(order_id))
         order.setField(fix.ExecID(gen_order_id()))
-        order.setField(fix.ExecType(fix.ExecType_NEW))
-        order.setField(fix.OrdStatus(fix.OrdStatus_NEW))
 
         clOrdID = fix.ClOrdID()
         symbol = fix.Symbol()
         side = fix.Side()
         orderQty = fix.OrderQty()
+        ordType = fix.OrdType()
 
         message.getField(clOrdID)
         message.getField(symbol)
         message.getField(side)
         message.getField(orderQty)
+        message.getField(ordType)
+
+        current_price = self.prices[symbol.getValue()]
+
+        if ordType.getValue() == fix.OrdType_MARKET:
+            self.handle_market_order(order, symbol, side, orderQty, current_price)
+        elif ordType.getValue() == fix.OrdType_LIMIT:
+            price = fix.Price()
+            message.getField(price)
+            self.handle_limit_order(order, symbol, side, orderQty, price, current_price)
+        elif ordType.getValue() == fix.OrdType_STOP:
+            stopPx = fix.StopPx()
+            message.getField(stopPx)
+            self.handle_stop_order(order, symbol, side, orderQty, stopPx, current_price)
+        elif ordType.getValue() == fix.OrdType_STOP_LIMIT:
+            stopPx = fix.StopPx()
+            price = fix.Price()
+            message.getField(stopPx)
+            message.getField(price)
+            self.handle_stop_limit_order(order, symbol, side, orderQty, stopPx, price, current_price)
+        else:
+            self.reject_order(order, "Unsupported order type")
 
         order.setField(clOrdID)
         order.setField(symbol)
         order.setField(side)
         order.setField(orderQty)
-        order.setField(fix.LastQty(orderQty.getValue()))
-        order.setField(fix.LastPx(self.prices[symbol.getValue()]))
-        order.setField(fix.CumQty(orderQty.getValue()))
-        order.setField(fix.AvgPx(self.prices[symbol.getValue()]))
+        order.setField(ordType)
 
         # Store the order details
         self.orders[order_id] = {
@@ -96,11 +114,100 @@ class MarketMaker(fix.Application):
             'symbol': symbol.getValue(),
             'side': side.getValue(),
             'orderQty': orderQty.getValue(),
-            'status': fix.OrdStatus_NEW
+            'ordType': ordType.getValue(),
+            'status': order.getField(fix.OrdStatus()).getValue()
         }
 
         fix.Session.sendToTarget(order, session_id)
 
+    def handle_market_order(self, order, symbol, side, orderQty, current_price):
+        order.setField(fix.ExecType(fix.ExecType_TRADE))
+        order.setField(fix.OrdStatus(fix.OrdStatus_FILLED))
+        order.setField(fix.LastQty(orderQty.getValue()))
+        order.setField(fix.LastPx(current_price))
+        order.setField(fix.CumQty(orderQty.getValue()))
+        order.setField(fix.AvgPx(current_price))
+
+    def handle_limit_order(self, order, symbol, side, orderQty, price, current_price):
+        is_executable = (side.getValue() == fix.Side_BUY and price.getValue() >= current_price) or \
+                        (side.getValue() == fix.Side_SELL and price.getValue() <= current_price)
+
+        if is_executable:
+            order.setField(fix.ExecType(fix.ExecType_TRADE))
+            order.setField(fix.OrdStatus(fix.OrdStatus_FILLED))
+            order.setField(fix.LastQty(orderQty.getValue()))
+            order.setField(fix.LastPx(price.getValue()))
+            order.setField(fix.CumQty(orderQty.getValue()))
+            order.setField(fix.AvgPx(price.getValue()))
+        else:
+            order.setField(fix.ExecType(fix.ExecType_NEW))
+            order.setField(fix.OrdStatus(fix.OrdStatus_NEW))
+            order.setField(fix.LastQty(0))
+            order.setField(fix.LastPx(0))
+            order.setField(fix.CumQty(0))
+            order.setField(fix.AvgPx(0))
+
+        order.setField(price)
+
+    def handle_stop_order(self, order, symbol, side, orderQty, stopPx, current_price):
+        is_triggered = (side.getValue() == fix.Side_BUY and current_price >= stopPx.getValue()) or \
+                       (side.getValue() == fix.Side_SELL and current_price <= stopPx.getValue())
+
+        if is_triggered:
+            order.setField(fix.ExecType(fix.ExecType_TRADE))
+            order.setField(fix.OrdStatus(fix.OrdStatus_FILLED))
+            order.setField(fix.LastQty(orderQty.getValue()))
+            order.setField(fix.LastPx(current_price))
+            order.setField(fix.CumQty(orderQty.getValue()))
+            order.setField(fix.AvgPx(current_price))
+        else:
+            order.setField(fix.ExecType(fix.ExecType_NEW))
+            order.setField(fix.OrdStatus(fix.OrdStatus_NEW))
+            order.setField(fix.LastQty(0))
+            order.setField(fix.LastPx(0))
+            order.setField(fix.CumQty(0))
+            order.setField(fix.AvgPx(0))
+
+        order.setField(stopPx)
+
+    def handle_stop_limit_order(self, order, symbol, side, orderQty, stopPx, price, current_price):
+        is_triggered = (side.getValue() == fix.Side_BUY and current_price >= stopPx.getValue()) or \
+                       (side.getValue() == fix.Side_SELL and current_price <= stopPx.getValue())
+
+        if is_triggered:
+            is_executable = (side.getValue() == fix.Side_BUY and price.getValue() >= current_price) or \
+                            (side.getValue() == fix.Side_SELL and price.getValue() <= current_price)
+
+            if is_executable:
+                order.setField(fix.ExecType(fix.ExecType_TRADE))
+                order.setField(fix.OrdStatus(fix.OrdStatus_FILLED))
+                order.setField(fix.LastQty(orderQty.getValue()))
+                order.setField(fix.LastPx(price.getValue()))
+                order.setField(fix.CumQty(orderQty.getValue()))
+                order.setField(fix.AvgPx(price.getValue()))
+            else:
+                order.setField(fix.ExecType(fix.ExecType_NEW))
+                order.setField(fix.OrdStatus(fix.OrdStatus_NEW))
+                order.setField(fix.LastQty(0))
+                order.setField(fix.LastPx(0))
+                order.setField(fix.CumQty(0))
+                order.setField(fix.AvgPx(0))
+        else:
+            order.setField(fix.ExecType(fix.ExecType_NEW))
+            order.setField(fix.OrdStatus(fix.OrdStatus_NEW))
+            order.setField(fix.LastQty(0))
+            order.setField(fix.LastPx(0))
+            order.setField(fix.CumQty(0))
+            order.setField(fix.AvgPx(0))
+
+        order.setField(stopPx)
+        order.setField(price)
+
+    def reject_order(self, order, reason):
+        order.setField(fix.ExecType(fix.ExecType_REJECTED))
+        order.setField(fix.OrdStatus(fix.OrdStatus_REJECTED))
+        order.setField(fix.OrdRejReason(fix.OrdRejReason_OTHER))
+        order.setField(fix.Text(reason))
     def get_order_status(self, order_id):
         if order_id in self.orders:
             return self.orders[order_id]

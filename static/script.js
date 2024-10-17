@@ -43,6 +43,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const samplePrice = 65;
             const limit = samplePrice * 1.1;
             document.getElementById('limit-price').placeholder = `Enter limit price (Warning: Don't exceed ${limit.toFixed(2)})`;
+
+        limitPriceInput.addEventListener('input', function() {
+                const warningElement = this.nextElementSibling || document.createElement('p');
+                warningElement.style.color = 'red';
+                if (parseFloat(this.value) > limit) {
+                    warningElement.textContent = `Warning: Price exceeds ${limit.toFixed(2)}`;
+                    if (!this.nextElementSibling) {
+                        this.parentNode.insertBefore(warningElement, this.nextSibling);
+                    }
+                } else {
+                    warningElement.textContent = '';
+                }
+            });
             break;
         case 'Stop':
             stopFields.style.display = 'block';
